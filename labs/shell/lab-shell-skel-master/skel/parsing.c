@@ -97,6 +97,10 @@ static char* expand_environ_var(char* arg) {
 
 	if (block_contains(arg, '$') == 0) {
 		char* env = getenv(&arg[1]);
+		if (env == NULL)
+			env = "";
+		if (strlen(env) > ARGSIZE)
+			arg = realloc(arg, strlen(env));
 		strcpy(arg, env);
 	}
 

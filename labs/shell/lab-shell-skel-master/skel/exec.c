@@ -51,8 +51,7 @@ static int open_redir_fd(char* file) {
 }
 
 void spawn_command(struct execcmd* cmd) {
-	split_line(cmd->scmd, ' ');
-	execvpe(cmd->scmd, cmd->argv, cmd->eargv);
+	execvpe(cmd->argv[0], cmd->argv, cmd->eargv);
 }
 
 // executes a command - does not return
