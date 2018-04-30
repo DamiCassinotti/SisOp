@@ -25,15 +25,17 @@ int run_cmd(char* cmd) {
 		exit(EXIT_SUCCESS);
 
 	// pwd buil-in call
-	if (pwd(cmd))
+	if (pwd(cmd)) {
+		exec_pwd();
 		return 0;
+	}
 
 	// parses the command line
 	parsed = parse_line(cmd);
 
 	// forks and run the command
 	if ((p = fork()) == 0) {
-
+		
 		// keep a reference
 		// to the parsed pipe cmd
 		// so it can be freed later

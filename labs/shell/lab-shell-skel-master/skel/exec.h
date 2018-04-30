@@ -12,4 +12,8 @@ void exec_cmd(struct cmd* c);
 
 void spawn_command(struct execcmd* cmd);
 
+void exec_cd(char* cmd);
+
+void exec_pwd();
+
 #endif // EXEC_H

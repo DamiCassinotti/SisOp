@@ -100,3 +100,18 @@ void exec_cmd(struct cmd* cmd) {
 		}
 	}
 }
+
+void exec_cd(char* cmd) {
+	char* nwd = split_line(cmd, ' ');
+	if (chdir(nwd) != 0) {
+		char buf[BUFLEN] = {0};
+		snprintf(buf, sizeof buf, "cannot cd to %s", nwd);
+		perror(buf);
+	}
+}
+
+void exec_pwd() {
+	char* cwd = getcwd(NULL, 0);
+	printf("%s\n", cwd);
+	free(cwd);
+}
