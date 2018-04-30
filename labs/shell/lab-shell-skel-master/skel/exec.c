@@ -30,8 +30,13 @@ static void get_environ_value(char* arg, char* value, int idx) {
 // 	get the index where the '=' is
 // - 'get_environ_*()' can be useful here
 static void set_environ_vars(char** eargv, int eargc) {
-
-	// Your code here
+	for (int i = 0; i < eargc; i++) {
+		char key[ARGSIZE] = {0};
+		char value[ARGSIZE] = {0};
+		get_environ_key(eargv[i], key);
+		get_environ_value(eargv[i], value, strlen(key));
+		setenv(key, value, 1);
+	}
 }
 
 // opens the file in which the stdin/stdout or
@@ -51,7 +56,12 @@ static int open_redir_fd(char* file) {
 }
 
 void spawn_command(struct execcmd* cmd) {
-	execvpe(cmd->argv[0], cmd->argv, cmd->eargv);
+	set_environ_vars(cmd->eargv, cmd->eargc);
+	execvp(cmd->argv[0], cmd->argv);
+}
+
+void spawn_background_command(struct backcmd* cmd) {
+	exec_cmd(cmd->c);
 }
 
 // executes a command - does not return
@@ -64,16 +74,11 @@ void exec_cmd(struct cmd* cmd) {
 	switch (cmd->type) {
 
 		case EXEC:
-			// spawns a command
 			spawn_command((struct execcmd*)cmd);
 			break;
 
 		case BACK: {
-			// runs a command in background
-			//
-			// Your code here
-			printf("Background process are not yet implemented\n");
-			_exit(-1);
+			spawn_background_command((struct backcmd*)cmd);
 			break;
 		}
 
