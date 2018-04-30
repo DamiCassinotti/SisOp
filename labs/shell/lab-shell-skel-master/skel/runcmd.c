@@ -35,7 +35,7 @@ int run_cmd(char* cmd) {
 
 	// forks and run the command
 	if ((p = fork()) == 0) {
-		
+
 		// keep a reference
 		// to the parsed pipe cmd
 		// so it can be freed later
@@ -49,16 +49,10 @@ int run_cmd(char* cmd) {
 	parsed->pid = p;
 
 	// background process special treatment
-	// Hint:
-	// - check if the process is
-	// 	going to be run in the 'back'
-	// - print info about it with
-	// 	'print_back_info()'
-	//
-	// Your code here
-
-	// waits for the process to finish
-	waitpid(p, &status, 0);
+	if (parsed->type == BACK)
+		print_back_info(parsed);
+	else
+		waitpid(p, &status, 0);
 
 	print_status_info(parsed);
 
