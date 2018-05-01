@@ -24,11 +24,6 @@ static void get_environ_value(char* arg, char* value, int idx) {
 
 // sets the environment variables passed
 // in the command line
-//
-// Hints:
-// - use 'block_contains()' to
-// 	get the index where the '=' is
-// - 'get_environ_*()' can be useful here
 static void set_environ_vars(char** eargv, int eargc) {
 	for (int i = 0; i < eargc; i++) {
 		char key[ARGSIZE] = {0};
@@ -42,40 +37,79 @@ static void set_environ_vars(char** eargv, int eargc) {
 // opens the file in which the stdin/stdout or
 // stderr flow will be redirected, and returns
 // the file descriptor
-//
-// Find out what permissions it needs.
-// Does it have to be closed after the execve(2) call?
-//
-// Hints:
-// - if O_CREAT is used, add S_IWUSR and S_IRUSR
-// 	to make it a readable normal file
 static int open_redir_fd(char* file) {
-
-	// Your code here
-	return -1;
+	int fd = open(file, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+	if (fd < 0) {
+		char buf[BUFLEN] = {0};
+		snprintf(buf, sizeof buf, "cannot open %s", file);
+		perror(buf);
+	}
+	return fd;
 }
 
 void spawn_command(struct execcmd* cmd) {
 	set_environ_vars(cmd->eargv, cmd->eargc);
-	execvp(cmd->argv[0], cmd->argv);
+	int result = execvp(cmd->argv[0], cmd->argv);
+	if (result < 0) {
+		char buf[BUFLEN] = {0};
+		snprintf(buf, sizeof buf, "error executing %s", cmd->scmd);
+		perror(buf);
+	}
 }
 
 void spawn_background_command(struct backcmd* cmd) {
 	exec_cmd(cmd->c);
 }
 
+void spawn_redir_command(struct execcmd* cmd) {
+	if (strlen(cmd->in_file) > 0)
+		dup2(open_redir_fd(cmd->in_file), STDIN_FILENO);
+	if (strlen(cmd->out_file) > 0)
+		dup2(open_redir_fd(cmd->out_file), STDOUT_FILENO);
+	if (strlen(cmd->err_file) > 0) {
+		if (cmd->err_file[0] == '&')
+			dup2(atoi(&cmd->err_file[1]), STDERR_FILENO);
+		else
+			dup2(open_redir_fd(cmd->err_file), STDERR_FILENO);
+	}
+	spawn_command(cmd);
+}
+
+void spawn_pipe_command(struct pipecmd* cmd) {
+	int pipefd[2];
+	int result = pipe(pipefd);
+	if (result < 0) {
+		char buf[BUFLEN] = {0};
+		snprintf(buf, sizeof buf, "error piping commands %s", cmd->scmd);
+		perror(buf);
+		return;
+	}
+	pid_t pid_a, pid_b;
+	if ((pid_a = fork()) == 0) {
+		close(pipefd[0]);
+		dup2(pipefd[1], STDOUT_FILENO);
+		exec_cmd(cmd->leftcmd);
+	} else if ((pid_b = fork()) == 0) {
+		close(pipefd[1]);
+		dup2(pipefd[0], STDIN_FILENO);
+		exec_cmd(cmd->rightcmd);
+	} else {
+		close(pipefd[0]);
+		close(pipefd[1]);
+	}
+	waitpid(pid_a, NULL, 0);
+	waitpid(pid_b, NULL, 0);
+}
+
 // executes a command - does not return
-//
-// Hint:
-// - check how the 'cmd' structs are defined
-// 	in types.h
 void exec_cmd(struct cmd* cmd) {
 
 	switch (cmd->type) {
 
-		case EXEC:
+		case EXEC: {
 			spawn_command((struct execcmd*)cmd);
 			break;
+		}
 
 		case BACK: {
 			spawn_background_command((struct backcmd*)cmd);
@@ -83,24 +117,13 @@ void exec_cmd(struct cmd* cmd) {
 		}
 
 		case REDIR: {
-			// changes the input/output/stderr flow
-			//
-			// Your code here
-			printf("Redirections are not yet implemented\n");
-			_exit(-1);
+			spawn_redir_command((struct execcmd*)cmd);
 			break;
 		}
 
 		case PIPE: {
-			// pipes two commands
-			//
-			// Your code here
-			printf("Pipes are not yet implemented\n");
-
-			// free the memory allocated
-			// for the pipe tree structure
+			spawn_pipe_command((struct pipecmd*)cmd);
 			free_command(parsed_pipe);
-
 			break;
 		}
 	}

@@ -14,6 +14,10 @@ void spawn_command(struct execcmd* cmd);
 
 void spawn_background_command(struct backcmd* cmd);
 
+void spawn_redir_command(struct execcmd* cmd);
+
+void spawn_pipe_command(struct pipecmd* cmd);
+
 void exec_cd(char* cmd);
 
 void exec_pwd();
