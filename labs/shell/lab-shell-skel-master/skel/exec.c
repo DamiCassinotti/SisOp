@@ -37,8 +37,13 @@ static void set_environ_vars(char** eargv, int eargc) {
 // opens the file in which the stdin/stdout or
 // stderr flow will be redirected, and returns
 // the file descriptor
-static int open_redir_fd(char* file) {
-	int fd = open(file, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+static int open_redir_fd(char* file, int truncate) {
+	int flags = O_CREAT|O_RDWR;
+	if (truncate)
+		flags |= O_TRUNC;
+	else
+		flags |= O_APPEND;
+	int fd = open(file, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
 	if (fd < 0) {
 		char buf[BUFLEN] = {0};
 		snprintf(buf, sizeof buf, "cannot open %s", file);
@@ -63,15 +68,23 @@ void spawn_background_command(struct backcmd* cmd) {
 
 void spawn_redir_command(struct execcmd* cmd) {
 	if (strlen(cmd->in_file) > 0)
-		dup2(open_redir_fd(cmd->in_file), STDIN_FILENO);
-	if (strlen(cmd->out_file) > 0)
-		dup2(open_redir_fd(cmd->out_file), STDOUT_FILENO);
+		dup2(open_redir_fd(cmd->in_file, 0), STDIN_FILENO);
+	if (strlen(cmd->out_file) > 0) {
+		if (cmd->out_file[0] == '>')
+			dup2(open_redir_fd(&cmd->out_file[1], 0), STDOUT_FILENO);
+		else
+			dup2(open_redir_fd(cmd->out_file, 1), STDOUT_FILENO);
+	}
 	if (strlen(cmd->err_file) > 0) {
 		if (cmd->err_file[0] == '&')
 			dup2(atoi(&cmd->err_file[1]), STDERR_FILENO);
+		else if (cmd->err_file[0] == '>')
+			dup2(open_redir_fd(&cmd->err_file[1], 0), STDERR_FILENO);
 		else
-			dup2(open_redir_fd(cmd->err_file), STDERR_FILENO);
+			dup2(open_redir_fd(cmd->err_file, 1), STDERR_FILENO);
 	}
+	if (strlen(cmd->out_file) > 0 && strlen(cmd->err_file) > 0 && strcmp(cmd->out_file, cmd->err_file) == 0)
+		dup2(STDOUT_FILENO, STDERR_FILENO);
 	spawn_command(cmd);
 }
 
