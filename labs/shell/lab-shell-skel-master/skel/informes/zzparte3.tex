@@ -1,0 +1,127 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[scale=1,angle=0,opacity=1,color=black!60]{background}
+\usepackage{tikzpagenodes}
+\usepackage{lastpage}
+\usepackage{lmodern}
+\usepackage{float}
+\usepackage[textwidth=420pt,textheight=630pt]{geometry}
+\setlength{\oddsidemargin}{15.5pt}
+%\usepackage[none]{hyphenat} %no cortar palabras
+
+\usepackage[spanish, activeacute]{babel} %Definir idioma español
+\usepackage[utf8]{inputenc} %Codificacion utf-8
+\backgroundsetup{contents={}} %Saca el 'draft'
+\definecolor{mygray}{rgb}{0.9,0.9,0.9}
+
+\usepackage{listings}
+\lstset{
+    basicstyle=\footnotesize,
+    backgroundcolor=\color{mygray},         
+    breaklines=true,
+    breakatwhitespace=true,   
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},              
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=4,
+    language=C,
+    frame=none,
+    title=\lstname
+}
+
+\def\labelitemi{$\bullet$}
+
+\begin{document}		
+	% TÍTULO, AUTORES Y FECHA
+	\begin{titlepage}
+		\vspace*{\fill}
+		\begin{center}
+			\Large 75.08 Sistemas Operativos \\
+			\Huge Lab Shell - Parte 3 \\
+			\bigskip\bigskip\bigskip
+			\large\textbf{Nombre y Apellido:} Damián Cassinotti \\
+			\textbf{Padrón:} 96618 \\
+			\textbf{Fecha de Entrega:} 04/05/2018\\
+					
+		\end{center}
+		\vspace*{\fill}
+	\end{titlepage}
+	\pagenumbering{arabic}
+	\newpage
+			
+	% ÍNDICE
+	\tableofcontents
+	\newpage
+	%\pagenumbering{arabic}
+	
+	\section{Redirecciones}
+		La tercera parte del shell consiste en implementar las distintas redirecciones que podemos encontrar en unix. Estas son las redirecciones a archivos y entre procesos mediante pipes.\\
+		
+		En cada caso veremos una breve explicación de lo pedido junto con el código de la solución. No mostraremos el código del shell completo, sino en cada parte nos centraremos en el necesario para cumplir con lo pedido. Se aclara que los ejercicios son iterativos e incrementales. Es decir, en cada ejercicio se suponen hechos los anteriores, contando con el código necesario.\\
+		
+		Al finalizar las explicaciones de cada punto se incluirá el código completo de los archivos modificados, sin incluir el esqueleto entero.
+		\subsection{Flujo estándar}
+		Las redirecciones de flujo estándar consiste en redirigir tanto la entrada y salida estándar como la salida estándar de errores a distintos archivos. Esto permite analizar la salida de un programa, o también automatizar la entrada. Veremos a continuación las tres formas de redirección de flujo estándar.
+		
+		\subsubsection{Entrada y Salida estándares a archivos}
+		Esta primera forma es la clásica forma de redirección de entrada y salida estándar. Esta redirección consiste en utilizar los operadores < y >, seguidos del nombre del archivo, para entrada y salida estándar respectivamente.\\
+		
+		A continuación se presenta el código que se agregó o modificó del esqueleto del shell. Recordar que en caso de archivos ya existentes, se mostrará solamente la sección modificada.\\
+		\lstinputlisting[linerange={40-54,69-72,76-77,88-90,118-120,132-135,142-143}, numbers=none]{../exec.c}
+		
+		\subsubsection{Error estándar a archivo}
+		La segunda forma que veremos es la salida estándar de errores. El caso es análogo a los anteriores, sólo que se antepone un 2 delante del comando de redirección (el 2 es el file descriptor del error estándar). De esta forma, el operador queda como 2> seguido del nombre de archivo.\\
+		
+		El código utilizado para la solución es el siguiente:\\
+		\lstinputlisting[linerange={69-69,78-78,84-85,88-90}, numbers=none]{../exec.c}
+		
+		\subsubsection{Combinar salida y errores}
+		La última forma que veremos es la redirección de error estándar en salida estándar. Dicha redirección se logra mediante el operador 2>\&1. Como generalización se puede ver que también funciona con cualquier file descriptor. Es decir, la expresión general es 2>\&fd.\\
+		
+		Habiendo visto eso, la solución planteada que se complementa con la solución del punto anterior, es la siguiente:\\
+		\lstinputlisting[linerange={69-69,78-80,83-85,88-90}, numbers=none]{../exec.c}
+		
+		\subsubsection{Challenges}
+		Por último contamos con dos challenges en los cuales se deberá implementar la solución para los operadores $>>$ y \&>.\\
+		
+		El primero consiste en realizar un append del archivo, a diferencia de los casos anteriores que por defecto truncaban el archivo en caso de que ya esté creado. Entonces, si el archivo existe y tenemos un doble operador redirección, el archivo no se reemplazará sino que el nuevo contenido se situará al final del archivo.\\
+		Para esto se debe contemplar el caso especial en la apertura del archivo. A continuación veremos el código correspondiente a la solución:\\
+		\lstinputlisting[linerange={69-69,72-85,88-90}, numbers=none]{../exec.c}
+		
+		El segundo operador tiene un comportamiento análogo a 2>\&1, es decir, redirige la salida de error estándar a la slaida estándar. A su vez, esta es redirigida a un archivo, pues luego de \&> se espera el nombre de un archivo.\\
+		Para este caso se requirió modificar el parser del shell, ya que en caso de encontrar un \& y no tener un > antes, se toma como un comando que se debe ejecutar en background. Para esto, se estableció que tampoco seria un comando de background si el \& estaba seguido de un >.\\
+		Por lo tanto, el código utilizado es el siguiente:\\
+		\lstinputlisting[linerange={21-22,25-33,67-68,176-191}, numbers=none]{../parsing.c}
+		\bigskip\bigskip\bigskip
+		\lstinputlisting[linerange={69-69,86-89}, numbers=none]{../exec.c}
+		
+		\subsection{Tuberías simples (pipes)}
+		El último objetivo del lab consiste en implementar las tuberías para relacionar dos comandos. Para esto se utilizó la syscall pipe(2), la cual crea una "tubería" mediante dos file descriptors. Uno de los file descriptors funciona como la punta de lectura, mientras que el otro como la punta de escritura.\\
+		Toda la información que se escriba en la punta de escritura se guardará en un buffer por el kernel hasta que se tenga que leer desde la punta de lectura.\\
+		
+		Para implementar la solución se tuvieron en cuenta varias cosas: primero, se realizan dos fork, uno por cada proceso a ejecutar. Ahora, teniendo tres procesos (el padre y sus dos hijos), se debe trabajar con los file descriptors que que abrieron para la tubería.\\
+		El proceso padre no debe utilizar ninguno de los file descriptors, por lo cual su proceso cierra ambos. \\
+		En el caso del primer hijo, este sólo debe utilizar la punta de escritura, por lo que cierra la de lectura y duplica el file descriptor de su salida estándar en el de la punta de escritura, de forma de redireccionar todo su contenido a la misma.\\
+		El segundo hijo tiene un comportamiento contrario al del primero. Éste solamente necesita la punta de lectura, por lo que cierra la de escritura y duplica su entrada estándar a la punta de lectura.\\
+		Luego de realizar los cierres de file descriptors necesarios, cada proceso se ejecuta o, en el caso del padre, espera que sus hijos terminen la ejecución.
+		
+		A continuación se muestra el código de la solución:\\
+		\lstinputlisting[linerange={91-115,118-120,137-143}, numbers=none]{../exec.c}
+	
+		
+	\newpage
+	\section{Apéndice}
+	En esta sección se mostrará el código completo de los archivos modificados del esqueleto. Los archivos estarán ordenados por orden alfabético.\\
+	
+	\lstinputlisting{../exec.c}
+	\bigskip\bigskip\bigskip
+	\lstinputlisting{../parsing.c}
+	
+	
+			
+\end{document}
