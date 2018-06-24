@@ -106,12 +106,18 @@ static bool parse_environ_var(struct execcmd* c, char* arg) {
 static char* expand_environ_var(char* arg) {
 
 	if (block_contains(arg, '$') == 0) {
-		char* env = getenv(&arg[1]);
-		if (env == NULL)
-			env = "";
-		if (strlen(env) > ARGSIZE)
-			arg = realloc(arg, strlen(env));
-		strcpy(arg, env);
+		if (!strcmp(&arg[1], "?")) {
+			char env[4] = {0};
+			sprintf(env, "%d", status);
+			strcpy(arg, env);
+		} else {
+			char *env = getenv(&arg[1]);
+			if (env == NULL)
+				env = "";
+			if (strlen(env) > ARGSIZE)
+				arg = realloc(arg, strlen(env));
+			strcpy(arg, env);
+		}
 	}
 
 	return arg;
