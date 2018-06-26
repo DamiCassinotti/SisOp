@@ -6,7 +6,7 @@ void print_status_info(struct cmd* cmd) {
 	if (strlen(cmd->scmd) == 0
 		|| cmd->type == PIPE)
 		return;
-	
+
 	if (WIFEXITED(status)) {
 
 		fprintf(stdout, "%s	Program: [%s] exited, status: %d %s\n",
@@ -34,3 +34,10 @@ void print_back_info(struct cmd* back) {
 		COLOR_BLUE, back->pid, COLOR_RESET);
 }
 
+void print_back_finish_info() {
+	if (strlen(back_msg) > 0) {
+		fprintf(stdout, "%s	%s %s\n",
+			COLOR_BLUE, back_msg, COLOR_RESET);
+		back_msg[0] = END_STRING;
+	}
+}

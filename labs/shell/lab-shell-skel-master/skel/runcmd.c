@@ -54,6 +54,7 @@ int run_cmd(char* cmd) {
 	else
 		waitpid(p, &status, 0);
 
+	print_back_finish_info();
 	print_status_info(parsed);
 
 	free_command(parsed);
