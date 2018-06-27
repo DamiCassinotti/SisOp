@@ -9,7 +9,7 @@ void background_handler(int signum) {
     if (exited_pid != last_background_cmd->pid)
 		return;
 	snprintf(back_msg, BUFLEN, "==> terminado: PID=%d (%s)", last_background_cmd->pid, last_background_cmd->scmd);
-    //free_command((struct cmd*) last_background_cmd);
+    free(last_background_cmd);
 	last_background_cmd = NULL;
 }
 
