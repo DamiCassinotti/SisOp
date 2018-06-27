@@ -74,22 +74,50 @@
 		\lstinputlisting[linerange={106-124}, numbers=none]{../parsing.c}
 		
 		\subsection{Tuberías múltiples}
-		El diseño que se eligió para la realización de tuberías múltiples es una forma recursiva de armar los comandos. En ele squeleto del shell se dividía el comando por el caracter "|", y, en el caso de utilizarse pipes, se trataban los dos lados del pipe como comandos simples.
+		El diseño que se eligió para la realización de tuberías múltiples es una forma recursiva de armar los comandos. En ele squeleto del shell se dividía el comando por el caracter "|", y, en el caso de utilizarse pipes, se trataban los dos lados del pipe como comandos simples.\\
+		
 		De esta forma, al usar tuberías múltiples, el comando de la derecha es el que tendría los distintos pipes. Entonces lo que se decidió hacer es tratar al comando de la derecha como una linea nueva, de forma que no importe cuantos pipes existan, se generarán tantos comandos como sean necesarios.
 		\lstinputlisting[linerange={201-214}, numbers=none]{../parsing.c}
 		
 		\subsection{Segundo plano avanzado}
+		Para la resolución de este ejercicio se utilizaron las señales del kernel, en este caso la señal SIGCHLD. De esta forma, el kernel le avisa al proceso padre que el hijo terminó su ejecución. Esto es muy importante, como se explicará más adelante, para determinar la finalización de un proceso que corre en segundo plano.\\
 		
-	
+		Para realizar esta solución se implementó el manejador de señales, sobre el cual se deberá imprimir lo pedido, en caso de ser necesario. Para esto, primero se declaró una varible global \textit{last\_background\_cmd}, la cual guardará el último comando de background ejecutado. Dicha variable se seteará al finalizar la ejecución del comando dentro de la función run\_cmd:\\
+		\lstinputlisting[linerange={53-63}, numbers=none]{../runcmd.c}
+		
+		Por otro lado, también se debe setear el manejador de la señal. Esto se realiza una única vez al iniciar la consola.\\
+		\lstinputlisting[linerange={34-43}, numbers=none]{../sh.c}
+		
+		En donde el seteo de la acción con su manejador se realiza de la siguiente manera:\\
+		\lstinputlisting[numbers=none]{../handlers.c}
+		
+		En este archivo vemos que se creó una nueva variable global: \textit{back\_msg}. En dicha variable se guardará el mensaje a imprimir antes de imprimir el nuevo prompt. Esta variable se imprime, de ser necesario, utilizando la siguiente función:
+		\lstinputlisting[linerange={37, 43}, numbers=none]{../printstatus.c}
+		
+		De esta forma es como queda definido el manejo de las señales. Estas señales son necesarias ya que es la única forma de que el padre sepa que un hijo terminó su ejecución, ya que para correr los procesos en segundo plano no se utiliza el wait\_pid. Pero, de todas formas, el sistema operativo le envía la señal por cada uno de los hijos que terminaron, sin importar si corrían en background o no (es decir, si el padre esperaba a que el hijo termine o no).\\
+		
+		Para finalizar se realizan dos aclaraciones:
+		\begin{itemize}
+			\item Al finalizar el manejo de la señal se realiza simplemente un free del comando, en vez de un free\_command. Esto se debe a que todos los atributos del comando de background que deben liberarse, se liberan al finalizar la ejecución del comando. 
+			\item La solución propuesta es válida solamente si se corre de a un proceso de background a la vez. Esto se debe a que solo se guarda la información del último que corrió. 
+		\end{itemize}
 		
 	\newpage
 	\section{Apéndice}
 	En esta sección se mostrará el código completo de los archivos modificados del esqueleto. Los archivos estarán ordenados por orden alfabético.\\
 	
+	\lstinputlisting{../handlers.h}
+	\bigskip\bigskip\bigskip
+	\lstinputlisting{../handlers.c}
+	\bigskip\bigskip\bigskip
 	\lstinputlisting{../parsing.h}
 	\bigskip\bigskip\bigskip
 	\lstinputlisting{../parsing.c}
-	
+	\bigskip\bigskip\bigskip
+	\lstinputlisting{../printstatus.h}
+	\bigskip\bigskip\bigskip
+	\lstinputlisting{../printstatus.c}
+	\lstinputlisting{../sh.c}
 	
 			
 \end{document}
