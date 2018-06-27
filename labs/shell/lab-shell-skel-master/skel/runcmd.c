@@ -2,6 +2,7 @@
 
 int status = 0;
 struct cmd* parsed_pipe;
+struct backcmd* last_background_cmd;
 
 // runs the command in 'cmd'
 int run_cmd(char* cmd) {
@@ -49,10 +50,15 @@ int run_cmd(char* cmd) {
 	parsed->pid = p;
 
 	// background process special treatment
-	if (parsed->type == BACK)
+	if (parsed->type == BACK) {
 		print_back_info(parsed);
-	else
+		last_background_cmd = malloc(sizeof(struct backcmd));
+		memcpy(last_background_cmd, parsed, sizeof(struct backcmd));
+		free_command(parsed);
+		return 0;
+	} else {
 		waitpid(p, &status, 0);
+	}
 
 	print_back_finish_info();
 	print_status_info(parsed);

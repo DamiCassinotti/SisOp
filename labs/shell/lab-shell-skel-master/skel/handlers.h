@@ -3,11 +3,12 @@
 
 #include "defs.h"
 #include "types.h"
+#include "freecmd.h"
 #include <signal.h>
 
 extern struct backcmd* last_background_cmd;
 
-void background_handler(int signum, siginfo_t* info, void* context);
+void background_handler(int signum);
 
 void set_action_background();
 

@@ -2,18 +2,20 @@
 
 char back_msg[BUFLEN];
 
-void background_handler(int signum, siginfo_t* info, void* context) {
-    if (info->si_pid != last_background_cmd->pid)
+void background_handler(int signum) {
+	if (last_background_cmd == NULL)
 		return;
-    if (last_background_cmd == NULL)
+	pid_t exited_pid = wait(NULL);
+    if (exited_pid != last_background_cmd->pid)
 		return;
-	snprintf(back_msg, BUFLEN, "==> terminado: PID=%d (%s)\n", last_background_cmd->pid, last_background_cmd->scmd);
-    last_background_cmd = NULL;
+	snprintf(back_msg, BUFLEN, "==> terminado: PID=%d (%s)", last_background_cmd->pid, last_background_cmd->scmd);
+    //free_command((struct cmd*) last_background_cmd);
+	last_background_cmd = NULL;
 }
 
 void set_action_background() {
     struct sigaction act;
-    act.sa_sigaction = background_handler;
+    act.sa_handler = background_handler;
     act.sa_flags = SA_RESTART;
     sigaction(SIGCHLD, &act, NULL);
 }

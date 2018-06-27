@@ -1,7 +1,5 @@
 #include "exec.h"
 
-struct backcmd* last_background_cmd;
-
 // sets the "key" argument with the key part of
 // the "arg" argument and null-terminates it
 static void get_environ_key(char* arg, char* key) {
@@ -66,7 +64,6 @@ void spawn_command(struct execcmd* cmd) {
 
 void spawn_background_command(struct backcmd* cmd) {
 	exec_cmd(cmd->c);
-	last_background_cmd = cmd;
 }
 
 void spawn_redir_command(struct execcmd* cmd) {
